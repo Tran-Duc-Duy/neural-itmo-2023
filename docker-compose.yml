@@ -1,0 +1,27 @@
+services:
+  mysql8-container:
+    image: mysql:8.1.0
+    container_name: mysql8-container
+    restart: always
+    ports:
+      - '3307:3306'
+    networks:
+      - mydatabases
+    environment:
+      MYSQL_ROOT_PASSWORD: Abc123456789@
+      MYSQL_ROOT_HOST: '%'
+  phpmyadmin8-container:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin8-container
+    restart: always
+    ports:
+      - '8088:80'
+    environment:
+      PMA_HOST: mysql8-container #phpMyAdmin Host
+    networks:
+      - mydatabases
+
+networks:
+  mydatabases:
+#docker-compose -f ./deployment.yml down
+#docker-compose -f ./deployment.yml up -d

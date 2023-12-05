@@ -30,7 +30,6 @@ os.environ["QT_FONT_DPI"] = "96" # FIX Problem for High DPI and Scale above 100%
 from login import Ui_Form
 from sql_class import connectMySQL
 
-
 # SET AS GLOBAL WIDGETS
 # ///////////////////////////////////////////////////////////////
 widgets = None
@@ -146,7 +145,7 @@ class MainWindow(QMainWindow):
             btn.setStyleSheet(UIFunctions.selectMenu(btn.styleSheet())) # SELECT MENU
 
         if btnName == "open_camera":
-            print("Hello")
+            print("open camera")
 
         # PRINT BTN NAME
         print(f'Button "{btnName}" pressed!')

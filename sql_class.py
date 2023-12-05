@@ -3,13 +3,14 @@ from mysql import connector
 
 class connectMySQL:
     def __init__(self):
-        self.host = "127.0.0.1"
+        self.host = "localhost"
         self.user = "root"
-        self.password = ""
-        self.port = 3306
+        self.password = "Abc123456789@"
+        self.port = 3307
         self.database = "neural01"
         self.my_connector = None
         self.my_cursor = None
+        self.create_table() 
 
     def connect(self):
         """
@@ -80,3 +81,25 @@ class connectMySQL:
         result = self.get_data(sql=sql)
 
         return result
+
+    def create_table(self):
+        """
+        Create table if it does not exist.
+        """
+        self.connect()
+        try:
+            sql = """
+            CREATE TABLE IF NOT EXISTS user_tb (
+                user_id INT AUTO_INCREMENT PRIMARY KEY,
+                user_name VARCHAR(255) NOT NULL,
+                password VARCHAR(255) NOT NULL
+            )
+            """
+            self.my_cursor.execute(sql)
+            self.my_connector.commit()
+        except Exception as E:
+            self.my_connector.rollback()
+            return E
+        finally:
+            if self.my_connector:
+                self.my_cursor.close()
