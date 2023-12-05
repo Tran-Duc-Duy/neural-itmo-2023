@@ -1,0 +1,7 @@
+__pycache__/
+.git/
+.pyc
+AI
+build
+neuralp.*
+.qtc_clangd/
