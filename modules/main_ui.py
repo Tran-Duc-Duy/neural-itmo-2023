@@ -17,11 +17,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QApplication, QCheckBox,
     QComboBox, QCommandLinkButton, QFrame, QGridLayout,
-    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
-    QMainWindow, QPlainTextEdit, QPushButton, QRadioButton,
-    QScrollArea, QScrollBar, QSizePolicy, QSlider,
-    QStackedWidget, QTableWidget, QTableWidgetItem, QTextEdit,
-    QVBoxLayout, QWidget)
+    QHBoxLayout, QHeaderView, QLabel, QLayout,
+    QLineEdit, QMainWindow, QPlainTextEdit, QPushButton,
+    QRadioButton, QScrollArea, QScrollBar, QSizePolicy,
+    QSlider, QStackedWidget, QTableWidget, QTableWidgetItem,
+    QTextEdit, QVBoxLayout, QWidget)
 import resources_rc
 
 class Ui_MainWindow(object):
@@ -1043,12 +1043,14 @@ class Ui_MainWindow(object):
         self.stackedWidget.addWidget(self.home)
         self.duy_page = QWidget()
         self.duy_page.setObjectName(u"duy_page")
+        self.duy_page.setAutoFillBackground(True)
         self.horizontalLayoutWidget = QWidget(self.duy_page)
         self.horizontalLayoutWidget.setObjectName(u"horizontalLayoutWidget")
-        self.horizontalLayoutWidget.setGeometry(QRect(0, 10, 601, 81))
+        self.horizontalLayoutWidget.setGeometry(QRect(0, 10, 1061, 81))
         self.button_list = QHBoxLayout(self.horizontalLayoutWidget)
         self.button_list.setSpacing(50)
         self.button_list.setObjectName(u"button_list")
+        self.button_list.setSizeConstraint(QLayout.SetMaximumSize)
         self.button_list.setContentsMargins(0, 0, 0, 0)
         self.open_camera = QPushButton(self.horizontalLayoutWidget)
         self.open_camera.setObjectName(u"open_camera")
@@ -1070,6 +1072,30 @@ class Ui_MainWindow(object):
 
         self.button_list.addWidget(self.add_new_file)
 
+        self.stackedWidget_2 = QStackedWidget(self.duy_page)
+        self.stackedWidget_2.setObjectName(u"stackedWidget_2")
+        self.stackedWidget_2.setGeometry(QRect(0, 108, 1059, 451))
+        sizePolicy.setHeightForWidth(self.stackedWidget_2.sizePolicy().hasHeightForWidth())
+        self.stackedWidget_2.setSizePolicy(sizePolicy)
+        self.stackedWidget_2.setAutoFillBackground(True)
+        self.camera_page = QWidget()
+        self.camera_page.setObjectName(u"camera_page")
+        self.image_label = QLabel(self.camera_page)
+        self.image_label.setObjectName(u"image_label")
+        self.image_label.setGeometry(QRect(210, 20, 671, 421))
+        self.image_label.setMinimumSize(QSize(200, 200))
+        self.image_label.setLayoutDirection(Qt.LeftToRight)
+        self.image_label.setAlignment(Qt.AlignCenter)
+        self.image_label.setMargin(10)
+        self.image_label.setIndent(-1)
+        self.stackedWidget_2.addWidget(self.camera_page)
+        self.empty_page = QWidget()
+        self.empty_page.setObjectName(u"empty_page")
+        self.empty_page.setStyleSheet(u"background-image: url(:/images/images/images/PyDracula_vertical.png);")
+        self.stackedWidget_2.addWidget(self.empty_page)
+        self.micor_page = QWidget()
+        self.micor_page.setObjectName(u"micor_page")
+        self.stackedWidget_2.addWidget(self.micor_page)
         self.stackedWidget.addWidget(self.duy_page)
         self.widgets = QWidget()
         self.widgets.setObjectName(u"widgets")
@@ -1212,7 +1238,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 218, 218))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 299, 218))
         self.scrollAreaWidgetContents.setStyleSheet(u" QScrollBar:vertical {\n"
 "	border: none;\n"
 "    background: rgb(52, 59, 72);\n"
@@ -1628,6 +1654,7 @@ class Ui_MainWindow(object):
         self.open_camera.setText(QCoreApplication.translate("MainWindow", u"Open Camera ", None))
         self.open_micro.setText(QCoreApplication.translate("MainWindow", u"Open Micro ", None))
         self.add_new_file.setText(QCoreApplication.translate("MainWindow", u"Add New File ", None))
+        self.image_label.setText("")
         self.labelBoxBlenderInstalation.setText(QCoreApplication.translate("MainWindow", u"FILE BOX", None))
         self.lineEdit.setText("")
         self.lineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Type here", None))

@@ -5,3 +5,6 @@ AI
 build
 neuralp.*
 .qtc_clangd/
+testapp.py
+ed.py
+emotion_demo.py

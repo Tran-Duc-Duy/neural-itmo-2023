@@ -13,7 +13,15 @@
 # https://doc.qt.io/qtforpython/licenses.html
 #
 # ///////////////////////////////////////////////////////////////
+import cv2
+from keras.models import load_model
+from keras_preprocessing.image import img_to_array
+from keras.preprocessing import image
+from PIL import ImageFont, ImageDraw, Image 
+import numpy as np
+from PySide6.QtCore import Qt, QTimer, Slot
 
+import subprocess
 import sys
 import os
 import platform
@@ -23,6 +31,7 @@ from AI.emotion_demo import test
 # IMPORT / GUI AND MODULES AND WIDGETS
 # ///////////////////////////////////////////////////////////////
 from modules import *
+from postgres_class import connectPostgreSQL
 from widgets import *
 os.environ["QT_FONT_DPI"] = "96" # FIX Problem for High DPI and Scale above 100%
 
@@ -38,7 +47,8 @@ class MainWindow(QMainWindow):
     def __init__(self,user_id):
         QMainWindow.__init__(self)
         self.USER_ID = user_id
-        self.mysql = connectMySQL()
+        # self.mysql = connectMySQL()
+        self.mysql = connectPostgreSQL()
         # SET AS GLOBAL WIDGETS
         # ///////////////////////////////////////////////////////////////
         self.ui = Ui_MainWindow()
@@ -51,6 +61,16 @@ class MainWindow(QMainWindow):
         # ///////////////////////////////////////////////////////////////
         Settings.ENABLE_CUSTOM_TITLE_BAR = True
 
+
+        # for AI 
+        self.face_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.classifier = load_model('.\emotion_detection.h5')
+        self.class_labels = ['Giận dữ', 'Ghê sợ', 'Sợ hãi', 'Hạnh phúc', 'Buồn', 'Bất ngờ', 'Trung lập']
+        self.font = ImageFont.truetype("./arial.ttf", 32)
+        self.b, self.g, self.r, self.a = 0, 255, 0, 0
+        self.cap = cv2.VideoCapture(0)
+        self.is_emotion_detection_running = False
+        # for AI end 
         # APP NAME
         # ///////////////////////////////////////////////////////////////
         title = "ITMO University"
@@ -77,7 +97,7 @@ class MainWindow(QMainWindow):
         # LEFT MENUS
         widgets.btn_home.clicked.connect(self.buttonClick)
         widgets.btn_duy.clicked.connect(self.buttonClick)
-        widgets.open_camera.clicked.connect(self.buttonClick)
+        widgets.open_camera.clicked.connect(self.toggle_emotion_detection)
 
         # EXTRA LEFT BOX
         def openCloseLeftBox():
@@ -112,6 +132,77 @@ class MainWindow(QMainWindow):
         widgets.stackedWidget.setCurrentWidget(widgets.home)
         widgets.btn_home.setStyleSheet(UIFunctions.selectMenu(widgets.btn_home.styleSheet()))
 
+
+
+    # AI fun
+        
+    @Slot()
+    def toggle_emotion_detection(self):
+        if not self.is_emotion_detection_running:
+            self.start_emotion_detection()
+        else:
+            self.stop_emotion_detection()
+
+    def start_emotion_detection(self):
+        if not self.cap.isOpened():
+            self.cap = cv2.VideoCapture(0)
+        widgets.open_camera.setText("Pause camera")
+        self.is_emotion_detection_running = True
+        widgets.open_camera.clicked.disconnect()
+        widgets.open_camera.clicked.connect(self.toggle_emotion_detection)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_frame)
+        self.timer.start(30)
+
+    def stop_emotion_detection(self):
+        if self.timer is not None:
+            self.timer.stop()
+            self.timer = None
+        self.cap.release()
+        widgets.open_camera.setText("Play camera")
+        self.is_emotion_detection_running = False
+        widgets.open_camera.clicked.disconnect()
+        widgets.open_camera.clicked.connect(self.toggle_emotion_detection)
+
+    def update_frame(self):
+        ret, frame = self.cap.read()
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if ret:
+            labels = []
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = self.face_classifier.detectMultiScale(gray, 1.3, 5)
+
+            for (x, y, w, h) in faces:
+                cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+                roi_gray = gray[y:y+h, x:x+w]
+                roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
+                roi = roi_gray.astype('float') / 255.0
+                roi = img_to_array(roi)
+                roi = np.expand_dims(roi, axis=0)
+                preds = self.classifier.predict(roi)[0]
+                label = self.class_labels[preds.argmax()]
+                img_pil = Image.fromarray(frame)
+                draw = ImageDraw.Draw(img_pil)
+                draw.text((50, 80), label, font=self.font, fill=(self.b, self.g, self.r, self.a))
+                frame = np.array(img_pil)
+
+            height, width, channel = frame.shape
+            bytes_per_line = channel * width
+            image = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(image)
+            widgets.image_label.setPixmap
+            height, width, channel = frame.shape
+            bytes_per_line = channel * width
+            image = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(image)
+            widgets.image_label.setPixmap(pixmap)
+
+    def closeEvent(self, event):
+        self.stop_emotion_detection()
+        event.accept()
+    # AI fun end 
+        
     # BUTTONS CLICK
     # Post here your functions for clicked buttons
     # ///////////////////////////////////////////////////////////////
@@ -143,9 +234,6 @@ class MainWindow(QMainWindow):
             widgets.stackedWidget.setCurrentWidget(widgets.duy_page) # SET PAGE
             UIFunctions.resetStyle(self, btnName) # RESET ANOTHERS BUTTONS SELECTED
             btn.setStyleSheet(UIFunctions.selectMenu(btn.styleSheet())) # SELECT MENU
-
-        if btnName == "open_camera":
-            print("open camera")
 
         # PRINT BTN NAME
         print(f'Button "{btnName}" pressed!')
@@ -180,8 +268,8 @@ class LoginWindow(QWidget):
         self._endPos = None
         self._tracking = False
 
-        self.mysql = connectMySQL()
-
+        # self.mysql = connectMySQL()
+        self.mysql = connectPostgreSQL()
         ## initialize QPushButtons in the login window.
         self.ui.backBtn.setFocusPolicy(Qt.NoFocus)
         self.ui.createBtn.setFocusPolicy(Qt.NoFocus)
