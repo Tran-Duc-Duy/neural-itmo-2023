@@ -4,7 +4,7 @@ class connectPostgreSQL:
     def __init__(self):
         self.host = "localhost"
         self.user = "postgres"
-        self.password = "29062001Duy!"
+        self.password = ""
         self.port = 5432
         self.database = "fortest"
         self.my_connector = None
