@@ -14,10 +14,16 @@ target = Executable(
 
 # SETUP CX FREEZE
 setup(
-    name = "ITMO Neural",
+    name = "itmo-neural",
     version = "1.0",
-    description = "Our project ITMO University",
+    description = "our project itmo university",
     author = "Tran Duc Duy",
-    options = {'build_exe' : {'include_files' : files}},
-    executables = [target]
+    executables = [target],
+    options= {
+        'build_exe': {
+            'include_files' : files,
+            "packages": ["numpy", "scipy"],
+            "excludes": ["scipy.spatial.cKDTree", "cv2"]
+            }
+        } 
 )

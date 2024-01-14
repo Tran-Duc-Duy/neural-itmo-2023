@@ -1796,6 +1796,12 @@ li.checked::marker { content: &quot;\2612&quot;; }
                    </property>
                    <item>
                     <widget class="QStackedWidget" name="stackedWidget">
+                     <property name="maximumSize">
+                      <size>
+                       <width>1068</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
                      <property name="font">
                       <font>
                        <family>Segoe UI</family>
@@ -1819,16 +1825,22 @@ background-repeat: no-repeat;</string>
                       </property>
                      </widget>
                      <widget class="QWidget" name="duy_page">
+                      <property name="maximumSize">
+                       <size>
+                        <width>1068</width>
+                        <height>603</height>
+                       </size>
+                      </property>
                       <property name="autoFillBackground">
-                       <bool>true</bool>
+                       <bool>false</bool>
                       </property>
                       <widget class="QWidget" name="horizontalLayoutWidget">
                        <property name="geometry">
                         <rect>
                          <x>0</x>
                          <y>10</y>
-                         <width>1061</width>
-                         <height>81</height>
+                         <width>871</width>
+                         <height>52</height>
                         </rect>
                        </property>
                        <layout class="QHBoxLayout" name="button_list">
@@ -1855,6 +1867,22 @@ background-repeat: no-repeat;</string>
                          </widget>
                         </item>
                         <item>
+                         <widget class="QPushButton" name="open_screen">
+                          <property name="minimumSize">
+                           <size>
+                            <width>0</width>
+                            <height>50</height>
+                           </size>
+                          </property>
+                          <property name="styleSheet">
+                           <string notr="true"/>
+                          </property>
+                          <property name="text">
+                           <string>Open Screen </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
                          <widget class="QPushButton" name="open_micro">
                           <property name="enabled">
                            <bool>true</bool>
@@ -1867,19 +1895,6 @@ background-repeat: no-repeat;</string>
                           </property>
                           <property name="text">
                            <string>Open Micro </string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item>
-                         <widget class="QPushButton" name="add_new_file">
-                          <property name="minimumSize">
-                           <size>
-                            <width>0</width>
-                            <height>50</height>
-                           </size>
-                          </property>
-                          <property name="text">
-                           <string>Add New File </string>
                           </property>
                          </widget>
                         </item>
@@ -1901,7 +1916,7 @@ background-repeat: no-repeat;</string>
                         </sizepolicy>
                        </property>
                        <property name="autoFillBackground">
-                        <bool>true</bool>
+                        <bool>false</bool>
                        </property>
                        <widget class="QWidget" name="camera_page">
                         <widget class="QLabel" name="image_label">
@@ -1923,7 +1938,7 @@ background-repeat: no-repeat;</string>
                           <enum>Qt::LeftToRight</enum>
                          </property>
                          <property name="text">
-                          <string> </string>
+                          <string/>
                          </property>
                          <property name="alignment">
                           <set>Qt::AlignCenter</set>
@@ -1935,13 +1950,49 @@ background-repeat: no-repeat;</string>
                           <number>-1</number>
                          </property>
                         </widget>
+                        <widget class="QFrame" name="record_frame">
+                         <property name="geometry">
+                          <rect>
+                           <x>120</x>
+                           <y>10</y>
+                           <width>711</width>
+                           <height>431</height>
+                          </rect>
+                         </property>
+                         <property name="minimumSize">
+                          <size>
+                           <width>0</width>
+                           <height>0</height>
+                          </size>
+                         </property>
+                         <property name="frameShape">
+                          <enum>QFrame::StyledPanel</enum>
+                         </property>
+                         <property name="frameShadow">
+                          <enum>QFrame::Raised</enum>
+                         </property>
+                        </widget>
                        </widget>
-                       <widget class="QWidget" name="empty_page">
+                       <widget class="QWidget" name="widget">
                         <property name="styleSheet">
                          <string notr="true">background-image: url(:/images/images/images/PyDracula_vertical.png);</string>
                         </property>
                        </widget>
-                       <widget class="QWidget" name="micor_page"/>
+                       <widget class="QWidget" name="micor_page">
+                        <widget class="QLabel" name="image_label_screen">
+                         <property name="geometry">
+                          <rect>
+                           <x>140</x>
+                           <y>40</y>
+                           <width>731</width>
+                           <height>351</height>
+                          </rect>
+                         </property>
+                         <property name="text">
+                          <string/>
+                         </property>
+                        </widget>
+                       </widget>
                       </widget>
                      </widget>
                      <widget class="QWidget" name="widgets">
@@ -2239,7 +2290,7 @@ background-repeat: no-repeat;</string>
                                 <rect>
                                  <x>0</x>
                                  <y>0</y>
-                                 <width>299</width>
+                                 <width>218</width>
                                  <height>218</height>
                                 </rect>
                                </property>

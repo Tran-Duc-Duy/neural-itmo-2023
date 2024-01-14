@@ -1,6 +1,6 @@
 services:
   mysql8-container:
-    image: mysql:8.1.0
+    image: mysql:8
     container_name: mysql8-container
     restart: always
     ports:

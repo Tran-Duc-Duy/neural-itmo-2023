@@ -1,23 +1,8 @@
-# ///////////////////////////////////////////////////////////////
-#
-# BY: WANDERSON M.PIMENTA
-# PROJECT MADE WITH: Qt Designer and PySide6
-# V: 1.0.0
-#
-# This project can be used freely for all uses, as long as they maintain the
-# respective credits only in the Python scripts, any information in the visual
-# interface (GUI) can be modified without any implication.
-#
-# There are limitations on Qt licenses if you want to use your products
-# commercially, I recommend reading them on the official website:
-# https://doc.qt.io/qtforpython/licenses.html
-#
-# ///////////////////////////////////////////////////////////////
 import cv2
 from keras.models import load_model
 from keras_preprocessing.image import img_to_array
 from keras.preprocessing import image
-from PIL import ImageFont, ImageDraw, Image 
+from PIL import ImageFont, ImageDraw, Image ,ImageGrab
 import numpy as np
 from PySide6.QtCore import Qt, QTimer, Slot
 
@@ -25,22 +10,30 @@ import subprocess
 import sys
 import os
 import platform
-# import AI
-from AI.emotion_demo import test
 # from login_window import LoginWindow
 # IMPORT / GUI AND MODULES AND WIDGETS
-# ///////////////////////////////////////////////////////////////
 from modules import *
 from postgres_class import connectPostgreSQL
+# from postgres_class import connectPostgreSQL
 from widgets import *
-os.environ["QT_FONT_DPI"] = "96" # FIX Problem for High DPI and Scale above 100%
-
-
+os.environ["QT_FONT_DPI"] = "96" 
+screen_size = (1920, 1080)
+import pyaudio
+import wave
+from sklearn.preprocessing import StandardScaler
+import time
+from getfeature import get_features
+from tensorflow.keras.models import load_model
+import os
+from prediction import emotion
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from login import Ui_Form
-from sql_class import connectMySQL
+# from sql_class import connectMySQL
 
 # SET AS GLOBAL WIDGETS
-# ///////////////////////////////////////////////////////////////
 widgets = None
 
 class MainWindow(QMainWindow):
@@ -50,54 +43,60 @@ class MainWindow(QMainWindow):
         # self.mysql = connectMySQL()
         self.mysql = connectPostgreSQL()
         # SET AS GLOBAL WIDGETS
-        # ///////////////////////////////////////////////////////////////
         self.ui = Ui_MainWindow()
         
         self.ui.setupUi(self)
         global widgets
         widgets = self.ui
-
+        widgets.layout = QVBoxLayout(widgets.record_frame)
         # USE CUSTOM TITLE BAR | USE AS "False" FOR MAC OR LINUX
-        # ///////////////////////////////////////////////////////////////
         Settings.ENABLE_CUSTOM_TITLE_BAR = True
-
 
         # for AI 
         self.face_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        self.classifier = load_model('.\emotion_detection.h5')
-        self.class_labels = ['Giận dữ', 'Ghê sợ', 'Sợ hãi', 'Hạnh phúc', 'Buồn', 'Bất ngờ', 'Trung lập']
+        self.classifier = load_model('./emotion_detection.h5')
+        self.class_labels = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
         self.font = ImageFont.truetype("./arial.ttf", 32)
         self.b, self.g, self.r, self.a = 0, 255, 0, 0
         self.cap = cv2.VideoCapture(0)
         self.is_emotion_detection_running = False
+        self.is_emotion_detection_running_screen = False
+
+      
         # for AI end 
+        # audio
+        
+        self.recording = False
+        self.frames = []
+        
+        self.audio = pyaudio.PyAudio()
+        self.stream = self.audio.open(format=pyaudio.paInt16, channels=1, rate=44100, input=True, frames_per_buffer=4096)
+
         # APP NAME
-        # ///////////////////////////////////////////////////////////////
         title = "ITMO University"
         description = "Project Neural"
+
         # APPLY TEXTS
         self.setWindowTitle(title)
         widgets.titleRightInfo.setText(description)
 
         # TOGGLE MENU
-        # ///////////////////////////////////////////////////////////////
         widgets.toggleButton.clicked.connect(lambda: UIFunctions.toggleMenu(self, True))
 
         # SET UI DEFINITIONS
-        # ///////////////////////////////////////////////////////////////
         UIFunctions.uiDefinitions(self)
 
         # QTableWidget PARAMETERS
-        # ///////////////////////////////////////////////////////////////
         widgets.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         # BUTTONS CLICK
-        # ///////////////////////////////////////////////////////////////
 
         # LEFT MENUS
         widgets.btn_home.clicked.connect(self.buttonClick)
         widgets.btn_duy.clicked.connect(self.buttonClick)
         widgets.open_camera.clicked.connect(self.toggle_emotion_detection)
+        widgets.open_screen.clicked.connect(self.toggle_emotion_detection_screen)
+        widgets.open_micro.clicked.connect(self.record)
 
         # EXTRA LEFT BOX
         def openCloseLeftBox():
@@ -111,11 +110,9 @@ class MainWindow(QMainWindow):
         widgets.settingsTopBtn.clicked.connect(openCloseRightBox)
 
         # SHOW APP
-        # ///////////////////////////////////////////////////////////////
         self.show()
 
         # SET CUSTOM THEME
-        # ///////////////////////////////////////////////////////////////
         useCustomTheme = False
         themeFile = "themes\py_dracula_light.qss"
 
@@ -128,12 +125,9 @@ class MainWindow(QMainWindow):
             AppFunctions.setThemeHack(self)
 
         # SET HOME PAGE AND SELECT MENU
-        # ///////////////////////////////////////////////////////////////
         widgets.stackedWidget.setCurrentWidget(widgets.home)
         widgets.btn_home.setStyleSheet(UIFunctions.selectMenu(widgets.btn_home.styleSheet()))
-
-
-
+        widgets.stackedWidget_2.setLayout(layout)
     # AI fun
         
     @Slot()
@@ -184,14 +178,12 @@ class MainWindow(QMainWindow):
                 label = self.class_labels[preds.argmax()]
                 img_pil = Image.fromarray(frame)
                 draw = ImageDraw.Draw(img_pil)
-                draw.text((50, 80), label, font=self.font, fill=(self.b, self.g, self.r, self.a))
+                text_width, text_height = draw.textsize(label, font=self.font)
+                text_x = x + int((w - text_width) / 2)  # Vị trí x của văn bản
+                text_y = y - text_height - 10  # Vị trí y của văn bản
+                draw.text((text_x, text_y), label, font=self.font, fill=(self.b, self.g, self.r, self.a))
                 frame = np.array(img_pil)
 
-            height, width, channel = frame.shape
-            bytes_per_line = channel * width
-            image = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
-            pixmap = QPixmap.fromImage(image)
-            widgets.image_label.setPixmap
             height, width, channel = frame.shape
             bytes_per_line = channel * width
             image = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
@@ -201,11 +193,129 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         self.stop_emotion_detection()
         event.accept()
-    # AI fun end 
+
+    @Slot()
+    def toggle_emotion_detection_screen(self):
+        if not self.is_emotion_detection_running_screen:
+            self.start_emotion_detection_screen()
+        else:
+            self.stop_emotion_detection_screen()
+
+    def start_emotion_detection_screen(self):
+        if not self.cap.isOpened():
+            self.cap = cv2.VideoCapture(0)
+        widgets.open_screen.setText("Pause screen")
+        self.is_emotion_detection_running_screen = True
+        widgets.open_screen.clicked.disconnect()
+        widgets.open_screen.clicked.connect(self.toggle_emotion_detection_screen)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_frame_screen)
+        self.timer.start(30)
+
+    def stop_emotion_detection_screen(self):
+        if self.timer is not None:
+            self.timer.stop()
+            self.timer = None
+        self.cap.release()
+        widgets.open_screen.setText("Play screen")
+        self.is_emotion_detection_running_screen = False
+        widgets.open_screen.clicked.disconnect()
+        widgets.open_screen.clicked.connect(self.toggle_emotion_detection_screen)
+
+    def update_frame_screen(self):
+        frame =  np.array(ImageGrab.grab(bbox=(0, 0, screen_size[0], screen_size[1])))
         
+        labels = []
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = self.face_classifier.detectMultiScale(gray, 1.3, 5)
+
+        for (x, y, w, h) in faces:
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+            roi_gray = gray[y:y+h, x:x+w]
+            roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
+            roi = roi_gray.astype('float') / 255.0
+            roi = img_to_array(roi)
+            roi = np.expand_dims(roi, axis=0)
+            preds = self.classifier.predict(roi)[0]
+            label = self.class_labels[preds.argmax()]
+            img_pil = Image.fromarray(frame)
+            draw = ImageDraw.Draw(img_pil)
+            text_width, text_height = draw.textsize(label, font=self.font)
+            text_x = x + int((w - text_width) / 2)  # Vị trí x của văn bản
+            text_y = y - text_height - 10  # Vị trí y của văn bản
+            draw.text((text_x, text_y), label, font=self.font, fill=(self.b, self.g, self.r, self.a))
+            frame = np.array(img_pil)
+
+        height, width, channel = frame.shape
+        bytes_per_line = channel * width
+        image = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(image)
+        widgets.image_label.setPixmap(pixmap)
+        widgets.image_label.setScaledContents(True)
+
+    def closeEvent_screen(self, event):
+        self.stop_emotion_detection_screen()
+        event.accept()
+
+    # AI fun end 
+    #micro
+    def handle_close(self,evt):
+        global stop_recording
+        stop_recording = True
+        self.stream.stop_stream()
+        self.stream.close()
+        self.audio.terminate()
+
+    def record(self):
+        ok = False
+        global stop_recording
+        stop_recording = False
+
+        fig, ax = plt.subplots()
+        fig.canvas.mpl_connect('close_event', self.handle_close)
+        try:
+            while not stop_recording:
+                audio = pyaudio.PyAudio()
+                stream = audio.open(format=pyaudio.paInt16, channels=1, rate=44100, input=True, frames_per_buffer=4096)
+                frames = []
+                for _ in range(int(44100 / 4096 * 3.5)):
+                    if ok == False:
+                        print("Talk now")
+                        ok = True
+                    try:
+                        data = stream.read(4096)
+                        frames.append(data)
+                    except IOError as e:
+                        if e.errno == pyaudio.paInputOverflowed:
+                            continue
+                sound_file = wave.open('myrecording.wav', 'wb')
+                sound_file.setnchannels(1)
+                sound_file.setsampwidth(audio.get_sample_size(pyaudio.paInt16))
+                sound_file.setframerate(44100)
+                sound_file.writeframes(b''.join(frames))
+                sound_file.close()
+
+                features = get_features('myrecording.wav')
+                print(features.shape) # should be (2376,)
+                x = emotion(features)
+                print(x)
+
+                # Plotting the wave graph
+                plt.plot(np.frombuffer(b''.join(frames), dtype=np.int16))
+                plt.title(x)
+                plt.show(block=False)
+                plt.pause(0.1)
+                plt.clf()
+                if stop_recording:
+                    break
+
+        except KeyboardInterrupt:
+            print("Đã ngắt ghi âm.")
+
+    #micro end 
     # BUTTONS CLICK
     # Post here your functions for clicked buttons
-    # ///////////////////////////////////////////////////////////////
     def buttonClick(self):
         # GET BUTTON CLICKED
         btn = self.sender()
@@ -217,17 +327,6 @@ class MainWindow(QMainWindow):
             UIFunctions.resetStyle(self, btnName)
             btn.setStyleSheet(UIFunctions.selectMenu(btn.styleSheet()))
 
-        # SHOW WIDGETS PAGE
-        # if btnName == "btn_widgets":
-        #     widgets.stackedWidget.setCurrentWidget(widgets.widgets)
-        #     UIFunctions.resetStyle(self, btnName)
-        #     btn.setStyleSheet(UIFunctions.selectMenu(btn.styleSheet()))
-
-        # SHOW NEW PAGE
-        # if btnName == "btn_new":
-        #     widgets.stackedWidget.setCurrentWidget(widgets.new_page) # SET PAGE
-        #     UIFunctions.resetStyle(self, btnName) # RESET ANOTHERS BUTTONS SELECTED
-        #     btn.setStyleSheet(UIFunctions.selectMenu(btn.styleSheet())) # SELECT MENU
 
         # SHOW DUY PAGE
         if btnName == "btn_duy":
@@ -238,15 +337,12 @@ class MainWindow(QMainWindow):
         # PRINT BTN NAME
         print(f'Button "{btnName}" pressed!')
 
-
     # RESIZE EVENTS
-    # ///////////////////////////////////////////////////////////////
     def resizeEvent(self, event):
         # Update Size Grips
         UIFunctions.resize_grips(self)
 
     # MOUSE CLICK EVENTS
-    # ///////////////////////////////////////////////////////////////
     def mousePressEvent(self, event):
         # SET DRAG POS WINDOW
         self.dragPos = event.globalPos()
@@ -256,7 +352,6 @@ class MainWindow(QMainWindow):
             print('Mouse click: LEFT CLICK')
         if event.buttons() == Qt.RightButton:
             print('Mouse click: RIGHT CLICK')
-
 
 class LoginWindow(QWidget):
     def __init__(self):
@@ -284,8 +379,7 @@ class LoginWindow(QWidget):
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
-
-    ## Make the window movable after hide window frame ///////////////////////////
+    ## Make the window movable after hide window frame 
     def mouseMoveEvent(self, a0: QMouseEvent) -> None:
         if self._tracking:
             self._endPos = a0.pos() - self._startPos
@@ -301,10 +395,8 @@ class LoginWindow(QWidget):
             self._tracking = False
             self._startPos = None
             self._endPos = None
-    ## ============================================================================
 
-
-    ## login window //////////////////////////////////////////////////////////////
+    ## login window 
     @Slot()
     def on_exitBtn_clicked(self):
         """
@@ -331,8 +423,7 @@ class LoginWindow(QWidget):
         """
         self.ui.funcWidget.setCurrentIndex(1)
 
-
-    ## register window ///////////////////////////////////////////////////////////
+    ## register window 
     @Slot()
     def on_backBtn_clicked(self):
         """
@@ -369,7 +460,6 @@ class LoginWindow(QWidget):
             self.warning_messagebox("Username is wrong. Please try again.")
             self.ui.lineEdit.clear()
             self.ui.lineEdit_2.clear()
-
 
     @Slot()
     def on_createBtn_clicked(self):
@@ -408,8 +498,6 @@ class LoginWindow(QWidget):
                             content = f"Something is wrong: {result_3}. Please create configuration data after login."
                             self.warning_messagebox(content=content)
 
-
-
     def warning_messagebox(self, content):
         """
         Common messagebox function
@@ -423,6 +511,7 @@ class LoginWindow(QWidget):
         msgBox.setStandardButtons(QMessageBox.Close)
 
         msgBox.exec_()
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon("icon.ico"))
